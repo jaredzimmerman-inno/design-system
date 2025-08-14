@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { render, fireEvent } from '@testing-library/react';
+import { render, fireEvent, waitFor } from '@testing-library/react';
 import { ChipInput } from '@/index';
 import { ChipInputProps as Props } from '@/index.type';
 import { testHelper, filterUndefined, valueHelper, testMessageHelper } from '@/utils/testHelper';
@@ -185,6 +185,48 @@ describe('Uncontrolled ChipInput component', () => {
 
     expect(FunctionValue).toHaveBeenCalled();
     expect(queryAllByTestId('DesignSystem-ChipInput--Chip')).toHaveLength(newValue.length);
+  });
+});
+
+describe('ChipInput keyboard accessibility', () => {
+  it('navigates between chips and input using arrow keys', async () => {
+    const { getByTestId, getAllByTestId } = render(<ChipInput defaultValue={value} />);
+
+    const input = getByTestId('DesignSystem-ChipInput--Input');
+    input.focus();
+
+    fireEvent.keyDown(input, { key: 'ArrowLeft' });
+    const wrappers = getAllByTestId('DesignSystem-ChipInput--ChipWrapper');
+    await waitFor(() => expect(wrappers[1]).toHaveFocus());
+
+    fireEvent.keyDown(wrappers[1], { key: 'ArrowLeft' });
+    await waitFor(() => expect(wrappers[0]).toHaveFocus());
+
+    fireEvent.keyDown(wrappers[0], { key: 'ArrowRight' });
+    await waitFor(() => expect(wrappers[1]).toHaveFocus());
+
+    fireEvent.keyDown(wrappers[1], { key: 'ArrowRight' });
+    await waitFor(() => expect(input).toHaveFocus());
+  });
+
+  it('deletes focused chip and clears all chips with escape', async () => {
+    const { getByTestId, getAllByTestId, queryAllByTestId } = render(<ChipInput defaultValue={value} />);
+
+    const input = getByTestId('DesignSystem-ChipInput--Input');
+    input.focus();
+    fireEvent.keyDown(input, { key: 'ArrowLeft' });
+
+    let wrappers = getAllByTestId('DesignSystem-ChipInput--ChipWrapper');
+    await waitFor(() => expect(wrappers[1]).toHaveFocus());
+
+    fireEvent.keyDown(wrappers[1], { key: 'Delete' });
+    await waitFor(() => expect(getAllByTestId('DesignSystem-ChipInput--ChipWrapper')).toHaveLength(1));
+    wrappers = getAllByTestId('DesignSystem-ChipInput--ChipWrapper');
+    await waitFor(() => expect(wrappers[0]).toHaveFocus());
+
+    fireEvent.keyDown(wrappers[0], { key: 'Escape' });
+    await waitFor(() => expect(queryAllByTestId('DesignSystem-ChipInput--ChipWrapper')).toHaveLength(0));
+    expect(input).toHaveFocus();
   });
 });
 

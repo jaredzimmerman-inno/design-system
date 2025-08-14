@@ -102,6 +102,17 @@ export const ChipInput = (props: ChipInputProps) => {
 
   const [chips, setChips] = React.useState(value || defaultValue);
   const [inputValue, setInputValue] = React.useState('');
+  const [focusedChip, setFocusedChip] = React.useState<number>(-1);
+
+  const focusChip = (index: number) => {
+    setFocusedChip(index);
+    if (index >= 0) {
+      const chipNodes = document.querySelectorAll<HTMLElement>('[data-test="DesignSystem-ChipInput--ChipWrapper"]');
+      chipNodes[index]?.focus();
+    } else {
+      inputRef.current?.focus();
+    }
+  };
 
   const baseProps = extractBaseProps(props);
 
@@ -176,16 +187,29 @@ export const ChipInput = (props: ChipInputProps) => {
     }
 
     onUpdateChips(updatedChips);
+    focusChip(-1);
   };
 
-  const onKeyDownHandler = (event: any) => {
+  const onKeyDownHandler = (event: React.KeyboardEvent<HTMLInputElement>) => {
     const chipsLength = chips.length;
-
     switch (event.key) {
       case keyCodes.DELETE:
       case keyCodes.BACKSPACE:
         if (inputValue === '' && chipsLength > 0) {
           onChipDeleteHandler(chipsLength - 1);
+          focusChip(-1);
+        }
+        break;
+      case 'ArrowLeft':
+        if (inputRef.current?.selectionStart === 0 && chipsLength > 0) {
+          event.preventDefault();
+          focusChip(chipsLength - 1);
+        }
+        break;
+      case 'Escape':
+        if (chipsLength > 0) {
+          onDeleteAllHandler();
+          focusChip(-1);
         }
         break;
       case keyCodes.ENTER:
@@ -219,25 +243,70 @@ export const ChipInput = (props: ChipInputProps) => {
   };
 
   const onClickHandler = () => {
-    inputRef.current?.focus();
+    focusChip(-1);
+  };
+
+  const onChipKeyDown = (event: React.KeyboardEvent<HTMLDivElement>, index: number) => {
+    switch (event.key) {
+      case 'ArrowLeft':
+        event.preventDefault();
+        if (index > 0) {
+          focusChip(index - 1);
+        }
+        break;
+      case 'ArrowRight':
+        event.preventDefault();
+        if (index < chips.length - 1) {
+          focusChip(index + 1);
+        } else {
+          focusChip(-1);
+        }
+        break;
+      case keyCodes.DELETE:
+      case keyCodes.BACKSPACE: {
+        event.preventDefault();
+        onChipDeleteHandler(index);
+        const newIndex = index >= chips.length - 1 ? index - 1 : index;
+        focusChip(newIndex);
+        break;
+      }
+      case 'Escape':
+        onDeleteAllHandler();
+        focusChip(-1);
+        break;
+      case keyCodes.ENTER:
+        if (chipOptions.onClick) {
+          chipOptions.onClick(chips[index], index);
+        }
+        break;
+      default:
+        break;
+    }
   };
 
   const chipComponents = chips.map((chip, index) => {
     const { type = 'input', onClick, ...rest } = chipOptions;
-
     return (
-      <Chip
-        data-test="DesignSystem-ChipInput--Chip"
-        label={chip}
-        name={chip}
-        type={type}
-        disabled={disabled}
+      <div
         key={index}
+        data-test="DesignSystem-ChipInput--ChipWrapper"
         className="my-3 mx-2"
-        onClick={() => onClick && onClick(chip, index)}
-        onClose={() => onChipDeleteHandler(index)}
-        {...rest}
-      />
+        tabIndex={focusedChip === index ? 0 : -1}
+        onFocus={() => setFocusedChip(index)}
+        onKeyDown={(e) => onChipKeyDown(e, index)}
+        role="button"
+      >
+        <Chip
+          data-test="DesignSystem-ChipInput--Chip"
+          label={chip}
+          name={chip}
+          type={type}
+          disabled={disabled}
+          onClick={() => onClick && onClick(chip, index)}
+          onClose={() => onChipDeleteHandler(index)}
+          {...rest}
+        />
+      </div>
     );
   });
 
@@ -262,8 +331,12 @@ export const ChipInput = (props: ChipInputProps) => {
             placeholder={chips && chips.length > 0 ? '' : placeholder}
             disabled={disabled}
             value={inputValue}
+            tabIndex={focusedChip === -1 ? 0 : -1}
             onBlur={onBlur}
-            onFocus={onFocus}
+            onFocus={(e) => {
+              setFocusedChip(-1);
+              if (onFocus) onFocus(e);
+            }}
             onChange={onInputChangeHandler}
             onKeyDown={onKeyDownHandler}
           />

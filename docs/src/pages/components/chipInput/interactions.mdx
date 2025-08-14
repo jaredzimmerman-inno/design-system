@@ -1,0 +1,43 @@
+### Keyboard Interactions
+
+<br />
+
+<table style={{width: "100%"}}>
+  <tbody>
+    <tr>
+      <th style={{width:"33%", textAlign: "left"}}>Initial state</th>
+      <th style={{width:"33%", textAlign: "left"}}>Keyboard Interaction</th>
+      <th style={{width:"33%", textAlign: "left"}}>Final state</th>
+    </tr>
+    <tr style={{verticalAlign: "top"}}>
+      <td>Input in focus with chips present</td>
+      <td>&#60;left arrow&#62;</td>
+      <td>Focus shifts to the last chip.</td>
+    </tr>
+    <tr style={{verticalAlign: "top"}}>
+      <td>Chip in focus</td>
+      <td>&#60;left arrow&#62;</td>
+      <td>Focus shifts to the previous chip.</td>
+    </tr>
+    <tr style={{verticalAlign: "top"}}>
+      <td>Chip in focus</td>
+      <td>&#60;right arrow&#62;</td>
+      <td>
+        <ul>
+          <li>Focus shifts to the next chip.</li>
+          <li>If on the last chip, focus moves to the input.</li>
+        </ul>
+      </td>
+    </tr>
+    <tr style={{verticalAlign: "top"}}>
+      <td>Chip in focus</td>
+      <td>&#60;Backspace/Delete&#62;</td>
+      <td>Remove the focused chip and focus the previous chip or the input if no chips remain.</td>
+    </tr>
+    <tr style={{verticalAlign: "top"}}>
+      <td>Input or chip in focus</td>
+      <td>&#60;Escape&#62;</td>
+      <td>Clear all chips and focus the input.</td>
+    </tr>
+  </tbody>
+</table>
